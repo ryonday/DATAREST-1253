@@ -1,0 +1,59 @@
+plugins {
+    id 'org.springframework.boot' version '2.0.2.RELEASE' apply true
+}
+
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'io.spring.dependency-management'
+
+group = 'com.ryonday'
+version = '0.0.1-SNAPSHOT'
+
+sourceCompatibility = JavaVersion.VERSION_1_9
+targetCompatibility = JavaVersion.VERSION_1_9
+
+repositories {
+    mavenCentral()
+    jcenter()
+    maven {
+        name 'Amazon DynamoDB Local Repository'
+        url 'https://s3-us-west-2.amazonaws.com/dynamodb-local/release'
+    }
+}
+
+dependencies {
+    compile 'org.springframework.boot:spring-boot-starter-data-rest',
+            'org.springframework.boot:spring-boot-starter-validation',
+            'com.github.spring-data-dynamodb:spring-data-dynamodb:5.0.2',
+            'com.google.guava:guava:25.1-jre',
+            'com.amazonaws:DynamoDBLocal:+'
+
+    compileOnly 'org.projectlombok:lombok'
+
+    testCompile 'org.springframework.boot:spring-boot-starter-test'
+    testCompileOnly 'org.projectlombok:lombok'
+}
+
+task copySqlLiteLibs(type: Copy) {
+    println("Copying SQLite Files for $project.name")
+    from(configurations.testCompile) {
+        include '*sqlite*.dll'
+        include '*sqlite*.dylib'
+        include '*sqlite*.so'
+    }
+    into 'build/sqlite4-libs'
+
+    from(configurations.testRuntimeClasspath) {
+        include '*sqlite*.dll'
+        include '*sqlite*.dylib'
+        include '*sqlite*.so'
+    }
+    into 'build/sqlite4-libs'
+}
+
+test {
+    dependsOn copySqlLiteLibs
+    systemProperty "sqlite4java.library.path", 'build/sqlite4-libs'
+    systemProperty "java.library.path", 'build/sqlite4-libs'
+}
